@@ -1,6 +1,6 @@
 # Import required modules
 import streamlit as st
-import os  # 수정된 부분
+import os
 from langchain.prompts import ChatPromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import UnstructuredFileLoader
@@ -41,16 +41,13 @@ llm = ChatOpenAI(
 @st.cache_data(show_spinner="Embedding file...")
 def embed_file(file):
     file_content = file.read()
-    file_path = os.path.join('/mnt/data/uploads', file.name)  # 수정된 부분
+    file_path = os.path.join('/tmp', file.name)  # 수정된 부분: /tmp 디렉토리 사용
 
-    # 디렉토리 존재 여부 확인 후 생성 (수정된 부분)
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-    # 파일 저장 (수정된 부분)
+    # 파일 저장
     with open(file_path, "wb") as f:
         f.write(file_content)
 
-    cache_dir = LocalFileStore(os.path.join('/mnt/data/cache/embeddings', file.name))  # 수정된 부분
+    cache_dir = LocalFileStore(os.path.join('/tmp/cache/embeddings', file.name))  # 수정된 부분: /tmp 디렉토리 사용
     splitter = CharacterTextSplitter.from_tiktoken_encoder(
         separator='\n',
         chunk_size=600,
@@ -138,4 +135,3 @@ if file:
 
 else:
     st.session_state["messages"] = []
-
