@@ -39,15 +39,11 @@ llm = ChatOpenAI(
 )
 
 @st.cache_data(show_spinner="Embedding file...")
-def embed_file(file):
-    file_content = file.read()
-    file_path = os.path.join('/tmp', file.name)  # 수정된 부분: /tmp 디렉토리 사용
+def embed_file(file_path):
+    with open(file_path, "rb") as f:
+        file_content = f.read()
 
-    # 파일 저장
-    with open(file_path, "wb") as f:
-        f.write(file_content)
-
-    cache_dir = LocalFileStore(os.path.join('/tmp/cache/embeddings', file.name))  # 수정된 부분: /tmp 디렉토리 사용
+    cache_dir = LocalFileStore(os.path.join('/tmp/cache/embeddings', os.path.basename(file_path)))
     splitter = CharacterTextSplitter.from_tiktoken_encoder(
         separator='\n',
         chunk_size=600,
@@ -107,14 +103,15 @@ Use this chatbot to ask questions to an AI about your files!
 Upload your files on the sidebar.
 """)
 
-with st.sidebar:
-    file = st.file_uploader(
-        "Upload a .txt .pdf or .docx file",
-        type=["pdf", "txt", "docx", "html"]
-    )
+# 문서 폴더 안의 첫 번째 파일 경로 가져오기
+documents_folder = "documents"
+always_loaded_file_path = None
+if os.path.exists(documents_folder) and os.listdir(documents_folder):
+    always_loaded_file_path = os.path.join(documents_folder, os.listdir(documents_folder)[0])
 
-if file:
-    retriever = embed_file(file)
+# 문서 임베딩
+if always_loaded_file_path:
+    retriever = embed_file(always_loaded_file_path)
     send_message("I'm ready! Ask away!", "ai", save=False)
     paint_history()
     message = st.chat_input("Ask anything about your file...")
@@ -132,6 +129,5 @@ if file:
         )
         with st.chat_message("ai"):
             chain.invoke(message)
-
 else:
     st.session_state["messages"] = []
